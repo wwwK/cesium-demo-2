@@ -1,37 +1,74 @@
-const path = require("path")
+const path = require('path')
+const TerserPlugin = require('terser-webpack-plugin')
+const CopyWebpackPlugin = require('copy-webpack-plugin')
+const webpack = require('webpack')
+const cesiumSource = './node_modules/cesium/Source'
+
 module.exports = {
-  publicPath: '', // 基本路径
-  assetsDir: 'static', // 静态路径存放位置
-  outputDir: "dist", //打包时生成的生产环境构建文件的目录
-  productionSourceMap: false, // 打包时不保留 map 文件（有 map 文件可以知道代码报错位置）
-  transpileDependencies: process.env.NODE_ENV === "development" ? ["*"] : [],
-  configureWebpack: config => {
-    config.entry.app = ["babel-polyfill", "./src/main.js"]
-    Object.assign(config, {
-      resolve: {
-        extensions: [".js", ".vue", ".json", ".css"], //文件优先解析后缀名顺序
-        // 别名配置
-        alias: {
-          "@": path.resolve(__dirname, "./src")
-        },
-        plugins: []
-      }
-    });
+  publicPath: '',
+  lintOnSave: true,
+  productionSourceMap: false,
+  filenameHashing: true,
+  devServer: {
+    // port: 3306,
+    open: true,
   },
-  devServer: { // 设置代理
-    open: true // 自动打开浏览器
-    // host: "localhost",
-    // port: 8080,
-    // https: false,
-    // hotOnly: false,
-    // proxy: {
-    // '/api':{
-    //     target:'http://jsonplaceholder.typicode.com',
-    //     changeOrigin:true,
-    //     pathRewrite:{
-    //         '/api':''
-    //     }
-    // }
-    // }
-  }
+  configureWebpack: {
+    output: {
+      sourcePrefix: ' ' // 让 webpack 正确处理多行字符串配置 amd 参数
+    },
+    amd: {
+      toUrlUndefined: true // webpack 在 cesium 中能友好的使用 require
+    },
+    resolve: {
+      extensions: ['.js', '.vue', '.json'],
+      alias: {
+        'cesium': path.resolve(__dirname, cesiumSource) // 定义别名 cesium 后，cesium 代表了 cesiumSource 的文件路径
+      }
+    },
+    plugins: [
+      new CopyWebpackPlugin([{ from: path.join(cesiumSource, 'Workers'), to: 'Workers' }]),
+      new CopyWebpackPlugin([{ from: path.join(cesiumSource, 'Assets'), to: 'Assets' }]),
+      new CopyWebpackPlugin([{ from: path.join(cesiumSource, 'Widgets'), to: 'Widgets' }]),
+      new CopyWebpackPlugin([{ from: path.join(cesiumSource, 'ThirdParty/Workers'), to: 'ThirdParty/Workers' }]),
+      new webpack.DefinePlugin({
+        CESIUM_BASE_URL: JSON.stringify('./')
+      })
+    ],
+    module: {
+      rules: [
+        {
+          test: /\.js$/,
+          use: {
+            loader: '@open-wc/webpack-import-meta-loader',
+          },
+        },
+      ]
+    },
+    optimization: {
+      minimizer: [
+        new TerserPlugin({
+          terserOptions: {
+            ecma: undefined,
+            warnings: false,
+            parse: {},
+            compress: {
+              drop_console: true,
+              drop_debugger: false,
+              pure_funcs: ['console.log'] // 移除console
+            }
+          },
+        }),
+      ]
+    },
+  },
+  // pwa: {
+  //   iconPaths: {
+  //     favicon32: "favicon.ico",
+  //     favicon16: "favicon.ico",
+  //     appleTouchIcon: "favicon.ico",
+  //     maskIcon: "favicon.ico",
+  //     msTileImage: "favicon.ico"
+  //   }
+  // }
 }
