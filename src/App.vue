@@ -13,10 +13,10 @@ export default {
   mounted () {
     const Cesium = this.cesium
     // Initialize the viewer widget with several custom options and mixins.
-    // eslint-disable-next-line no-unused-vars
-    var viewer = new Cesium.Viewer('cesiumContainer', {
+    let viewer = new Cesium.Viewer('cesiumContainer', {
       infoBox: false
     })
+    console.log(viewer)
   }
 }
 </script>
