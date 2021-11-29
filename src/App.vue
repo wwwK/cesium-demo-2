@@ -43,6 +43,8 @@ export default {
   name: 'App',
   data () {
     return {
+      entityList: [],
+      positionList: [],
       dimensionalType: true,
       viewer: null
     }
@@ -52,25 +54,28 @@ export default {
   },
   methods: {
     // 添加线
-    AddPolyline (params) {
+    AddPolyline (startPoint, endPoint) {
+      const arr = [startPoint, endPoint]
+      let result = []
+      arr.forEach(item => {
+        if (item.lon && item.lat) {
+          result.push(item.lon)
+          result.push(item.lat)
+        }
+      })
       const _this = this
       const Cesium = this.cesium
-      if (params.positions.length === 0) {
-        alert('其提供边点!');
-        return;
-      }
-      let entity = new Cesium.Entity({
-        name: '线',
-        show: true,
-        polyline: new Cesium.PolylineGraphics({
-          show: true,
-          positions: params.positions,
-          width: params.width || 5,
-          material: params.material || Cesium.Color.RED
-        })
+      const lineEntities = new Cesium.Entity({
+        name: 'lineEntities',
+        polyline: {
+          positions: Cesium.Cartesian3.fromDegreesArray(result),
+          width: 5,
+          arcType: Cesium.ArcType.RHUMB,
+          material: Cesium.Color.RED,
+        }
       })
-      _this.viewer.entities.add(entity)
-      return entity
+      _this.viewer.entities.add(lineEntities)
+      return lineEntities
     },
     // 添加点
     addPointFun (lon, lat) {
@@ -149,6 +154,17 @@ export default {
       let lon = Cesium.Math.toDegrees(cartesianToCartographic.longitude)
       let lat = Cesium.Math.toDegrees(cartesianToCartographic.latitude)
       console.log('世界坐标转经纬度', lon, lat)
+
+      let point = {
+        lon,
+        lat
+      }
+      _this.positionList.push(point)
+      let _point = _this.addPointFun(_this.positionList[_this.positionList.length - 1].lon, _this.positionList[_this.positionList.length - 1].lat)
+      this.entityList.push(_point)
+      let startPoint = _this.positionList[_this.positionList.length - 1] || []
+      let endPoint = _this.positionList[_this.positionList.length - 2] || []
+      this.AddPolyline(startPoint, endPoint)
 
       const pick = _this.viewer.scene.pick(event.position) // 单个对象
       const list = _this.viewer.scene.drillPick(event.position) // 列表
