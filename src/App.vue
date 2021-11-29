@@ -142,6 +142,14 @@ export default {
       const cartographic = Cesium.Cartographic.fromCartesian(_this.viewer.scene.pickPosition(event.position))
       console.log('空间直角坐标系转经纬度', cartographic)
 
+      // 经纬度
+      let earthPosition = _this.viewer.camera.pickEllipsoid(event.position, _this.viewer.scene.globe.ellipsoid)
+      let ellipsoid = _this.viewer.scene.globe.ellipsoid
+      let cartesianToCartographic = ellipsoid.cartesianToCartographic(earthPosition)
+      let lon = Cesium.Math.toDegrees(cartesianToCartographic.longitude)
+      let lat = Cesium.Math.toDegrees(cartesianToCartographic.latitude)
+      console.log('世界坐标转经纬度', lon, lat)
+
       const pick = _this.viewer.scene.pick(event.position) // 单个对象
       const list = _this.viewer.scene.drillPick(event.position) // 列表
       if (Cesium.defined(pick) && pick.id.id) {
@@ -172,6 +180,17 @@ export default {
       })
       _this.viewer.entities.add(pointEntity)
 
+      const lineEntities = new Cesium.Entity({
+        name: 'lineEntities',
+        polyline: {
+          positions: Cesium.Cartesian3.fromDegreesArray([116.3, 39.9, 116.47958024969756, 39.84829594348535, 116.56374186776782, 39.87785704033606]),
+          width: 5,
+          arcType: Cesium.ArcType.RHUMB,
+          material: Cesium.Color.RED,
+        }
+      })
+      _this.viewer.entities.add(lineEntities)
+
       const boxEntities = {
         id: 'boxEntities',
         name: 'Red box with black outline',
@@ -187,10 +206,10 @@ export default {
 
       _this.viewer.zoomTo(_this.viewer.entities)
 
-      // // 获取实体
+      // 获取实体
       // console.log(_this.viewer.entities.getById('boxEntities'))
 
-      // // 删除实体
+      // 删除实体
       // setTimeout(() => {
       //   // 方法一：针对性删除某一个
       //   // _this.viewer.entities.remove(boxEntities)
